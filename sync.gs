@@ -220,7 +220,7 @@ function syncMirror_(now, horizon) {
 
 function importMirrorEvent_(mirrorCalId, sourceEvent) {
   const mirror = {
-    iCalUID: sourceEvent.id + "_mirror_" + Date.now() + "@busysync",
+    iCalUID: Utilities.getUuid() + "@busysync",
     summary: "[" + (sourceEvent.summary || "No title") + "]",
     description: sourceEvent.description || "",
     location: sourceEvent.location || "",
@@ -238,15 +238,14 @@ function importMirrorEvent_(mirrorCalId, sourceEvent) {
     },
   };
 
-  // Attendees — safe to include with Events.import() (never sends notifications).
-  // Set all to accepted so they display cleanly, not as pending invites.
+  // Attendees as plain text in description — never in the attendees field
+  // to avoid any risk of emails, notifications, or calendar cross-posting.
   if (sourceEvent.attendees && sourceEvent.attendees.length > 0) {
-    mirror.attendees = sourceEvent.attendees.map((a) => ({
-      email: a.email,
-      displayName: a.displayName || undefined,
-      responseStatus: a.responseStatus || "accepted",
-      self: false,
-    }));
+    const names = sourceEvent.attendees
+      .map((a) => a.displayName || a.email.split("@")[0])
+      .join(", ");
+    mirror.description = (mirror.description ? mirror.description + "\n\n" : "") +
+      "Attendees: " + names;
   }
 
   // Color — only include if present
@@ -343,6 +342,7 @@ function createBlockEvent_(start, end) {
     },
   };
 
+  Logger.log("Creating block: " + event.start.dateTime + " → " + event.end.dateTime);
   Calendar.Events.insert(event, WORK_CALENDAR_ID);
 }
 
@@ -372,26 +372,22 @@ function getExistingSyncEvents_(calendarId, tagKey, tagValue, timeMin, timeMax) 
 // ── MIRROR CALENDAR MANAGEMENT ──────────────────────────────
 
 function getMirrorCalendarId_() {
-  // Check cached ID first
+  // Check cached ID — verify via CalendarApp (no broad scope needed)
   const cached = PropertiesService.getScriptProperties().getProperty(MIRROR_CAL_PROP);
   if (cached) {
-    try {
-      Calendar.Calendars.get(cached);
-      return cached;
-    } catch (e) {
-      // Cached ID is stale, look up by name
-      PropertiesService.getScriptProperties().deleteProperty(MIRROR_CAL_PROP);
-    }
+    const cal = CalendarApp.getCalendarById(cached);
+    if (cal) return cached;
+    // Cached ID is stale
+    PropertiesService.getScriptProperties().deleteProperty(MIRROR_CAL_PROP);
   }
 
-  // Find by name using CalendarApp (works with narrower scopes)
+  // Find by name
   const cals = CalendarApp.getCalendarsByName(MIRROR_CALENDAR_NAME);
   if (cals.length === 0) {
     return null;
   }
 
   const id = cals[0].getId();
-  // Cache for future runs
   PropertiesService.getScriptProperties().setProperty(MIRROR_CAL_PROP, id);
   return id;
 }
