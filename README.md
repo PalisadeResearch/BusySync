@@ -1,6 +1,6 @@
 # BusySync
 
-Google Apps Script that syncs your personal and work Google Calendars — without leaking event details in either direction.
+Google Apps Script that syncs your personal and work Google Calendars — keeping your personal events private from work while mirroring work events back to you.
 
 ## The Problem
 
