@@ -50,7 +50,7 @@
 const PERSONAL_CALENDAR_ID = "XXXXXXXXXX@gmail.com";
 
 // How far ahead to sync (days)
-const SYNC_WINDOW_DAYS = 14;
+const SYNC_WINDOW_DAYS = 30;
 
 // What the blocking events say on your work calendar
 const BLOCK_TITLE = "Busy";
