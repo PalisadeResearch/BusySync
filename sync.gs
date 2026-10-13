@@ -107,7 +107,11 @@ function syncBusyBlocks_(now, horizon) {
   for (const evt of existingBlocks) {
     const startMs = new Date(evt.start.dateTime || evt.start.date).getTime();
     const endMs = new Date(evt.end.dateTime || evt.end.date).getTime();
-    existingByKey.set(startMs + "|" + endMs, evt);
+    const key = startMs + "|" + endMs;
+    if (!existingByKey.has(key)) {
+      existingByKey.set(key, []);
+    }
+    existingByKey.get(key).push(evt);
   }
 
   let created = 0;
@@ -123,8 +127,10 @@ function syncBusyBlocks_(now, horizon) {
   }
 
   let removed = 0;
-  for (const [key, evt] of existingByKey) {
-    if (!busyKeys.has(key)) {
+  for (const [key, events] of existingByKey) {
+    // Keep one block for an active interval; remove every block for a stale one.
+    const staleEvents = busyKeys.has(key) ? events.slice(1) : events;
+    for (const evt of staleEvents) {
       Calendar.Events.remove(WORK_CALENDAR_ID, evt.id);
       removed++;
     }

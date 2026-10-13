@@ -76,3 +76,7 @@ Run `teardown()` in the Apps Script editor. It removes all synced events from bo
 - Conference/Meet links are included in mirror events so you can join directly
 - Uses `LockService` to prevent concurrent sync runs from colliding
 - Only mirrors `default`, `fromGmail`, and `focusTime` event types
+
+## Local Tests
+
+Run `node --test tests/busy-sync.test.cjs` with Node.js 18 or later. These offline tests load `sync.gs` with mocked Apps Script services and check busy-block reconciliation, including duplicate blocks and paginated results. They do not access Google Calendars or send email.
